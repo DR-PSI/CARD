@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>นามบัตร — Dr. Pirapong · Hanumanprime AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #06060f;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    overflow: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 30%, rgba(127,119,221,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 70%, rgba(212,83,126,0.09) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .page-title {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: rgba(175,169,236,0.5);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  /* Scene */
+  .scene {
+    perspective: 1200px;
+    width: 480px;
+    height: 272px;
+    cursor: grab;
+    position: relative;
+  }
+  .scene:active { cursor: grabbing; }
+
+  .card-3d {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-10deg) rotateY(18deg);
+    transition: transform 0.08s linear;
+    border-radius: 20px;
+  }
+
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    backface-visibility: hidden;
+    overflow: hidden;
+  }
+
+  .face-back { transform: rotateY(180deg); }
+
+  /* Grid BG */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(127,119,221,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127,119,221,0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+  }
+
+  /* Glows */
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(30px);
+  }
+  .glow-purple { width:180px; height:180px; top:-60px; right:-50px; background:rgba(127,119,221,0.35); }
+  .glow-pink   { width:130px; height:130px; bottom:-40px; left:-20px; background:rgba(212,83,126,0.25); }
+  .glow-teal   { width:100px; height:100px; bottom:-20px; right:60px; background:rgba(29,158,117,0.18); }
+
+  /* Front content */
+  .front-inner {
+    position: relative;
+    z-index: 2;
+    padding: 28px 30px;
+    height: 100%;
+    display: flex;
+    gap: 18px;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .brand-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: #7F77DD;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .brand-icon svg { width: 20px; height: 20px; }
+
+  .brand-name { font-size: 12px; font-weight: 600; color: #fff; letter-spacing: 0.06em; }
+  .brand-sub  { font-size: 10px; color: #AFA9EC; letter-spacing: 0.12em; margin-top: 1px; }
+
+  .person-name { font-size: 22px; font-weight: 500; color: #fff; line-height: 1.2; }
+  .person-role { font-size: 11px; color: #AFA9EC; letter-spacing: 0.05em; margin: 4px 0 18px; }
+
+  .contact-list { display: flex; flex-direction: column; gap: 8px; }
+  .contact-row  { display: flex; align-items: center; gap: 9px; }
+  .contact-dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .contact-text { font-size: 11px; color: #ccc; font-family: 'DM Mono', monospace; }
+
+  /* QR side */
+  .qr-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .qr-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 7px;
+  }
+
+  .qr-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* Scan overlay */
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.4s;
+  }
+
+  .scan-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 170px;
+  }
+
+  .scan-corner {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-color: rgba(127,119,221,0.85);
+    border-style: solid;
+    border-width: 0;
+  }
+  .sc-tl { top:0; left:0;  border-top-width:2px; border-left-width:2px;  border-radius:4px 0 0 0; }
+  .sc-tr { top:0; right:0; border-top-width:2px; border-right-width:2px; border-radius:0 4px 0 0; }
+  .sc-bl { bottom:0; left:0;  border-bottom-width:2px; border-left-width:2px;  border-radius:0 0 0 4px; }
+  .sc-br { bottom:0; right:0; border-bottom-width:2px; border-right-width:2px; border-radius:0 0 4px 0; }
+
+  .scan-line {
+    position: absolute;
+    left: 4px; right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(127,119,221,0.8), transparent);
+    top: 0;
+    animation: scanMove 2s ease-in-out infinite;
+    border-radius: 1px;
+  }
+
+  @keyframes scanMove {
+    0%   { top: 4px; opacity: 0.5; }
+    50%  { top: calc(100% - 6px); opacity: 1; }
+    100% { top: 4px; opacity: 0.5; }
+  }
+
+  /* Back face */
+  .back-inner {
+    position: relative;
+    z-index: 2;
+    padding: 24px 28px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .back-label {
+    font-size: 10px;
+    color: #7F77DD;
+    letter-spacing: 0.14em;
+    margin-bottom: 16px;
+  }
+
+  .back-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 20px;
+    flex: 1;
+  }
+
+  .back-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .back-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .back-icon svg { width: 14px; height: 14px; }
+
+  .back-val  { font-size: 11px; color: #e0e0e0; line-height: 1.5; }
+  .back-hint { font-size: 10px; color: #555; margin-top: 1px; }
+
+  .back-footer {
+    border-top: 0.5px solid rgba(255,255,255,0.07);
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+
+  .footer-brand {
+    display: flex; align-items: center; gap: 7px;
+  }
+  .footer-icon {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    background: #7F77DD;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .footer-icon svg { width: 11px; height: 11px; }
+  .footer-name { font-size: 10px; color: #7F77DD; letter-spacing: 0.06em; }
+  .footer-url  { font-size: 10px; color: #3a3a3a; font-family: 'DM Mono', monospace; }
+
+  /* Controls */
+  .controls {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hint-text {
+    font-size: 11px;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.06em;
+  }
+
+  .flip-btn {
+    background: transparent;
+    border: 0.5px solid rgba(127,119,221,0.4);
+    color: #AFA9EC;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 10px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+
+  .flip-btn:hover {
+    background: rgba(127,119,221,0.12);
+    border-color: rgba(127,119,221,0.7);
+    color: #fff;
+  }
+
+  /* Shine effect */
+  .shine {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.06) 0%,
+      rgba(255,255,255,0) 40%,
+      rgba(255,255,255,0.03) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+  }
+</style>
+</head>
+<body>
+
+<p class="page-title">Hanumanprime AI Solutions · นามบัตรดิจิทัล</p>
+
+<div class="scene" id="scene">
+  <div class="card-3d" id="card">
+
+    <!-- FRONT -->
+    <div class="face" style="background:#0b0b1f;">
+      <div class="grid-bg"></div>
+      <div class="glow glow-purple"></div>
+      <div class="glow glow-pink"></div>
+      <div class="shine"></div>
+
+      <div class="front-inner">
+        <div style="flex:1;">
+          <div class="brand-row">
+            <div class="brand-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 2a2.5 2.5 0 0 1 5 0v.5"/>
+                <path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/>
+                <path d="M8 7V4.5"/>
+                <path d="M16 7V4.5"/>
+                <path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>
+              </svg>
+            </div>
+            <div>
+              <div class="brand-name">HANUMANPRIME</div>
+              <div class="brand-sub">AI SOLUTIONS</div>
+            </div>
+          </div>
+
+          <div class="person-name">ดร.พิรพงศ์ ลิ้มประสิทธิ์วงศ์</div>
+          <div class="person-role">Dr. Piraphong Limprasittwong · AI Specialist</div>
+
+          <div class="contact-list">
+            <div class="contact-row">
+              <div class="contact-dot" style="background:#7F77DD;"></div>
+              <span class="contact-text">02-041-8187 &nbsp;/&nbsp; 02-162-0232</span>
+            </div>
+            <div class="contact-row">
+              <div class="contact-dot" style="background:#D4537E;"></div>
+              <span class="contact-text">dr.ps@hanumaprime.com</span>
+            </div>
+            <div class="contact-row">
+              <div class="contact-dot" style="background:#5DCAA5;"></div>
+              <span class="contact-text">LINE: tinamics-ai</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- QR -->
+        <div class="qr-side">
+          <div class="qr-box">
+            <svg width="76" height="76" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+              <rect width="21" height="21" fill="#fff"/>
+              <rect x="1" y="1" width="7" height="7" fill="#0b0b1f"/>
+              <rect x="2" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="3" width="3" height="3" fill="#0b0b1f"/>
+              <rect x="13" y="1" width="7" height="7" fill="#0b0b1f"/>
+              <rect x="14" y="2" width="5" height="5" fill="#fff"/>
+              <rect x="15" y="3" width="3" height="3" fill="#0b0b1f"/>
+              <rect x="1" y="13" width="7" height="7" fill="#0b0b1f"/>
+              <rect x="2" y="14" width="5" height="5" fill="#fff"/>
+              <rect x="3" y="15" width="3" height="3" fill="#0b0b1f"/>
+              <rect x="9" y="1" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="11" y="1" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="3" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="5" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="11" y="5" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="7" width="1" height="2" fill="#0b0b1f"/>
+              <rect x="11" y="7" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="1" y="9" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="5" y="9" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="7" y="9" width="3" height="1" fill="#0b0b1f"/>
+              <rect x="11" y="9" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="14" y="9" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="16" y="9" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="19" y="9" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="1" y="11" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="3" y="11" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="7" y="11" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="11" y="11" width="1" height="2" fill="#0b0b1f"/>
+              <rect x="13" y="11" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="17" y="11" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="13" width="1" height="2" fill="#0b0b1f"/>
+              <rect x="13" y="13" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="15" y="13" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="17" y="13" width="3" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="15" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="13" y="15" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="17" y="15" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="19" y="15" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="17" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="11" y="17" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="15" y="17" width="1" height="2" fill="#0b0b1f"/>
+              <rect x="17" y="17" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="9" y="19" width="2" height="1" fill="#0b0b1f"/>
+              <rect x="13" y="19" width="1" height="1" fill="#0b0b1f"/>
+              <rect x="17" y="19" width="3" height="1" fill="#0b0b1f"/>
+            </svg>
+          </div>
+          <div class="qr-label">สแกนติดต่อ</div>
+        </div>
+      </div>
+
+      <!-- Scan overlay -->
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="scan-frame">
+          <div class="scan-corner sc-tl"></div>
+          <div class="scan-corner sc-tr"></div>
+          <div class="scan-corner sc-bl"></div>
+          <div class="scan-corner sc-br"></div>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BACK -->
+    <div class="face face-back" style="background:#0b0b1f;">
+      <div class="grid-bg"></div>
+      <div class="glow glow-teal" style="bottom:-60px;right:-40px;width:180px;height:180px;background:rgba(83,74,183,0.2);"></div>
+      <div class="shine"></div>
+
+      <div class="back-inner">
+        <div class="back-label">CONTACT INFORMATION</div>
+
+        <div class="back-grid">
+          <div class="back-item">
+            <div class="back-icon" style="background:rgba(127,119,221,0.18);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#AFA9EC" stroke-width="2" stroke-linecap="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12 19.79 19.79 0 0 1 1.09 3.46a2 2 0 0 1 1.99-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.27-.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="back-val">02-041-8187<br>02-162-0232</div>
+              <div class="back-hint">จ–ศ 8:30–17:30</div>
+            </div>
+          </div>
+
+          <div class="back-item">
+            <div class="back-icon" style="background:rgba(212,83,126,0.18);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ED93B1" stroke-width="2" stroke-linecap="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </div>
+            <div>
+              <div class="back-val" style="font-size:10px;">dr.ps@hanumaprime.com<br>dr.pirapong@gmail.com</div>
+              <div class="back-hint">ตอบใน 24 ชม.</div>
+            </div>
+          </div>
+
+          <div class="back-item">
+            <div class="back-icon" style="background:rgba(29,158,117,0.18);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#5DCAA5" stroke-width="2" stroke-linecap="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="back-val">LINE: tinamics-ai</div>
+              <div class="back-hint">ติดต่อด่วน</div>
+            </div>
+          </div>
+
+          <div class="back-item">
+            <div class="back-icon" style="background:rgba(255,255,255,0.07);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round">
+                <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="back-val" style="font-size:10px;">22 ซ.เคหะร่มเกล้า 74 แยก 6</div>
+              <div class="back-hint">สะพานสูง กรุงเทพฯ 10240</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="back-footer">
+          <div class="footer-brand">
+            <div class="footer-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+                <path d="M9.5 2a2.5 2.5 0 0 1 5 0v.5"/>
+                <path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7z"/>
+              </svg>
+            </div>
+            <span class="footer-name">HANUMANPRIME AI SOLUTIONS</span>
+          </div>
+          <span class="footer-url">hanumaprime.com</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="controls">
+  <p class="hint-text">ลากเพื่อหมุน 3D &nbsp;·&nbsp; drag to rotate</p>
+  <button class="flip-btn" id="flipBtn" onclick="flipCard()">พลิกดูด้านหลัง ↩</button>
+</div>
+
+<script>
+  const scene = document.getElementById('scene');
+  const card  = document.getElementById('card');
+  const scanOverlay = document.getElementById('scanOverlay');
+  const flipBtn = document.getElementById('flipBtn');
+
+  let rotX = -10, rotY = 18;
+  let flipped = false;
+  let dragging = false, lastX = 0, lastY = 0;
+  let targetX = -10, targetY = 18;
+  let rafId;
+
+  function setTransform(instant) {
+    const fy = flipped ? 180 : 0;
+    if (instant) {
+      card.style.transition = 'none';
+    }
+    card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY + fy}deg)`;
+    const frontVisible = Math.abs((rotY % 360 + 360) % 360) < 90 || Math.abs((rotY % 360 + 360) % 360) > 270;
+    scanOverlay.style.opacity = (!flipped && frontVisible) ? '1' : '0';
+  }
+
+  function flipCard() {
+    flipped = !flipped;
+    card.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1)';
+    setTransform(false);
+    flipBtn.textContent = flipped ? 'พลิกดูด้านหน้า ↩' : 'พลิกดูด้านหลัง ↩';
+    setTimeout(() => { card.style.transition = 'none'; }, 700);
+  }
+  window.flipCard = flipCard;
+
+  function onDown(x, y) { dragging = true; lastX = x; lastY = y; }
+  function onMove(x, y) {
+    if (!dragging) return;
+    rotY += (x - lastX) * 0.55;
+    rotX -= (y - lastY) * 0.45;
+    rotX = Math.max(-38, Math.min(38, rotX));
+    lastX = x; lastY = y;
+    card.style.transition = 'none';
+    setTransform(false);
+  }
+  function onUp() { dragging = false; }
+
+  scene.addEventListener('mousedown',  e => onDown(e.clientX, e.clientY));
+  window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup',   onUp);
+
+  scene.addEventListener('touchstart', e => { onDown(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  scene.addEventListener('touchmove',  e => { onMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, {passive:false});
+  scene.addEventListener('touchend',   onUp);
+
+  setTransform(true);
+</script>
+</body>
+</html>
